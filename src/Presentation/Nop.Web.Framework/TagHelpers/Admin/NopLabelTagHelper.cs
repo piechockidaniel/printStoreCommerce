@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Nop.Core;
 using Nop.Services.Localization;
-using Nop.Web.Framework.Mvc.ModelBinding;
+using Nop.Web.Framework.Localization;
 
 namespace Nop.Web.Framework.TagHelpers.Admin;
 
@@ -53,8 +53,10 @@ public partial class NopLabelTagHelper : TagHelper
 
         ArgumentNullException.ThrowIfNull(output);
 
+        var(resourceName, resourceValue) = await _localizationService.GetResourceAsync(For.Metadata.ContainerType, For.Metadata.Name);
+        
         //generate label
-        var tagBuilder = Generator.GenerateLabel(ViewContext, For.ModelExplorer, For.Name, null, new { @class = "col-form-label" });
+        var tagBuilder = Generator.GenerateLabel(ViewContext, For.ModelExplorer, For.Name, resourceValue, new { @class = "col-form-label" });
         if (tagBuilder != null)
         {
             //create a label wrapper
@@ -71,12 +73,11 @@ public partial class NopLabelTagHelper : TagHelper
             output.Content.SetHtmlContent(tagBuilder);
 
             //add hint
-            if (DisplayHint && For.Metadata.AdditionalValues.TryGetValue("NopResourceDisplayNameAttribute", out var value)
-                            && value is NopResourceDisplayNameAttribute resourceDisplayName)
+            if (DisplayHint && !string.IsNullOrEmpty(resourceName))
             {
                 var language = await _workContext.GetWorkingLanguageAsync();
                 var hintResource = await _localizationService
-                    .GetResourceAsync($"{resourceDisplayName.ResourceKey}.Hint", language.Id, returnEmptyIfNotFound: true, logIfNotFound: false);
+                    .GetResourceAsync($"{resourceName}.Hint", language.Id, returnEmptyIfNotFound: true, logIfNotFound: false);
 
                 if (!string.IsNullOrEmpty(hintResource))
                 {

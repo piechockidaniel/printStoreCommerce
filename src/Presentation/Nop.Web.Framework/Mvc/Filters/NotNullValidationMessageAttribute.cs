@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Nop.Core.Http.Extensions;
 using Nop.Data;
 using Nop.Services.Localization;
+using Nop.Web.Framework.Localization;
 using Nop.Web.Framework.Models;
-using Nop.Web.Framework.Mvc.ModelBinding;
 using Nop.Web.Framework.Validators;
 
 namespace Nop.Web.Framework.Mvc.Filters;
@@ -83,7 +83,8 @@ public sealed class NotNullValidationMessageAttribute : TypeFilterAttribute
                 return;
 
             //get model properties that failed validation
-            var properties = model.GetType().GetProperties();
+            var modelType = model.GetType();
+            var properties = modelType.GetProperties();
             var locale = await _localizationService.GetResourceAsync(NopValidationDefaults.NotNullValidationLocaleName);
             foreach (var modelState in nullModelValues)
             {
@@ -92,12 +93,7 @@ public sealed class NotNullValidationMessageAttribute : TypeFilterAttribute
                 if (property is null)
                     continue;
 
-                var displayName = property
-                                      .GetCustomAttributes(typeof(NopResourceDisplayNameAttribute), true)
-                                      .OfType<NopResourceDisplayNameAttribute>()
-                                      .FirstOrDefault()
-                                      ?.DisplayName
-                                  ?? property.Name;
+                var displayName = (await _localizationService.GetResourceAsync(modelType, property.Name)).resourceValue ?? property.Name;
 
                 //set localized error message
                 modelState.Value.Errors.Clear();
